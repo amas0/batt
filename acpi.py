@@ -20,11 +20,11 @@ class BatteryStatusReading:
     minutes_until_charged: int | None
 
     @staticmethod
-    def extract_estimated_minutes(time_str: str) -> int:
+    def extract_estimated_minutes(time_str: str) -> int | None:
         pat = r"(?:(\d{2}):(\d{2}):(\d{2}))"
         found = re.findall(pat, time_str)
         if not found:
-            raise ValueError(f"Unable to parse time estimation from {time_str}")
+            return None
         (h, m, s), *_ = found
         est_min = int(m) + round(int(s) / 60)
         if h:
