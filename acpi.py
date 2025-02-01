@@ -49,30 +49,18 @@ class BatteryStatusReading:
                 raise ValueError(f"Unable to parse state from: {s}")
 
         percentage = int(p)
+        status_kwargs = dict(
+            timestamp_utc=timestamp,
+            state=state,
+            percentage=percentage,
+            minutes_until_discharged=None,
+            minutes_until_charged=None,
+        )
         if state == BatteryState.charging:
-            return cls(
-                timestamp_utc=timestamp,
-                state=state,
-                percentage=percentage,
-                minutes_until_discharged=None,
-                minutes_until_charged=cls.extract_estimated_minutes(r),
-            )
+            status_kwargs["minutes_until_charged"] = cls.extract_estimated_minutes(r)
         elif state == BatteryState.discharging:
-            return cls(
-                timestamp_utc=timestamp,
-                state=state,
-                percentage=percentage,
-                minutes_until_discharged=cls.extract_estimated_minutes(r),
-                minutes_until_charged=None,
-            )
-        else:
-            return cls(
-                timestamp_utc=timestamp,
-                state=state,
-                percentage=percentage,
-                minutes_until_discharged=None,
-                minutes_until_charged=None,
-            )
+            status_kwargs["minutes_until_discharged"] = cls.extract_estimated_minutes(r)
+        return cls(**status_kwargs)  # type: ignore
 
 
 @dataclass
