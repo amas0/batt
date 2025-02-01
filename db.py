@@ -27,7 +27,7 @@ class Column:
 @dataclass
 class Table:
     name: str
-    columns: list[Column]
+    columns: tuple[Column, ...]
 
     @property
     def create_statement(self) -> str:
@@ -36,26 +36,25 @@ class Table:
 
 
 class Database:
-    TABLES = [
-        Table(
-            "status",
-            [
-                Column("timestamp_utc", "INTEGER", True),
-                Column("state", "INTEGER"),
-                Column("percentage", "INTEGER"),
-                Column("minutes_until_discharged", "INTEGER"),
-                Column("minutes_until_charged", "INTEGER"),
-            ],
+    STATUS_TABLE = Table(
+        "status",
+        (
+            Column("timestamp_utc", "INTEGER", True),
+            Column("state", "INTEGER"),
+            Column("percentage", "INTEGER"),
+            Column("minutes_until_discharged", "INTEGER"),
+            Column("minutes_until_charged", "INTEGER"),
         ),
-        Table(
-            "design_info",
-            [
-                Column("timestamp_utc", "INTEGER", True),
-                Column("design_capacity_mah", "INTEGER"),
-                Column("last_full_capacity_mah", "INTEGER"),
-            ],
+    )
+    DESIGN_INFO_TABLE = Table(
+        "design_info",
+        (
+            Column("timestamp_utc", "INTEGER", True),
+            Column("design_capacity_mah", "INTEGER"),
+            Column("last_full_capacity_mah", "INTEGER"),
         ),
-    ]
+    )
+    TABLES = (STATUS_TABLE, DESIGN_INFO_TABLE)
 
     def __init__(self, path: Path):
         self.path = path
@@ -73,3 +72,31 @@ class Database:
         with self.cursor() as cur:
             for table in Database.TABLES:
                 cur.execute(table.create_statement)
+
+    def insert_battery_status(self, status: BatteryStatusReading):
+        column_names = [col.name for col in self.STATUS_TABLE.columns]
+        values = [
+            status.timestamp_utc,
+            status.state.value,
+            status.percentage,
+            status.minutes_until_discharged,
+            status.minutes_until_charged,
+        ]
+        placeholders = ", ".join("?" * len(values))
+        insert_stmt = f"INSERT INTO {self.STATUS_TABLE.name} ({','.join(column_names)}) VALUES ({placeholders})"
+        with self.cursor() as cursor:
+            cursor.execute(insert_stmt, values)
+        self.conn.commit()
+
+    def insert_battery_design_info(self, design: BatteryDesignInfo):
+        column_names = [col.name for col in self.DESIGN_INFO_TABLE.columns]
+        values = [
+            design.timestamp_utc,
+            design.design_capacity_mah,
+            design.last_full_capacity_mah,
+        ]
+        placeholders = ", ".join("?" * len(values))
+        insert_stmt = f"INSERT INTO {self.DESIGN_INFO_TABLE.name} ({','.join(column_names)}) VALUES ({placeholders})"
+        with self.cursor() as cursor:
+            cursor.execute(insert_stmt, values)
+        self.conn.commit()
