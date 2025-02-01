@@ -1,5 +1,6 @@
 import re
 import subprocess
+import time
 from dataclasses import dataclass
 from enum import Enum
 
@@ -12,6 +13,7 @@ class BatteryState(Enum):
 
 @dataclass
 class BatteryStatusReading:
+    timestamp_utc: int
     state: BatteryState
     percentage: int
     minutes_until_discharged: int | None
@@ -30,7 +32,7 @@ class BatteryStatusReading:
         return est_min
 
     @classmethod
-    def from_acpi_output(cls, status: str):
+    def from_acpi_output(cls, status: str, timestamp: int):
         pat = r"Battery \d+: (\w+), (\d+)%, (.*)"
         match = re.match(pat, status)
         if not match:
@@ -49,6 +51,7 @@ class BatteryStatusReading:
         percentage = int(p)
         if state == BatteryState.charging:
             return cls(
+                timestamp_utc=timestamp,
                 state=state,
                 percentage=percentage,
                 minutes_until_discharged=None,
@@ -56,6 +59,7 @@ class BatteryStatusReading:
             )
         elif state == BatteryState.discharging:
             return cls(
+                timestamp_utc=timestamp,
                 state=state,
                 percentage=percentage,
                 minutes_until_discharged=cls.extract_estimated_minutes(r),
@@ -63,6 +67,7 @@ class BatteryStatusReading:
             )
         else:
             return cls(
+                timestamp_utc=timestamp,
                 state=state,
                 percentage=percentage,
                 minutes_until_discharged=None,
@@ -72,17 +77,22 @@ class BatteryStatusReading:
 
 @dataclass
 class BatteryDesignInfo:
+    timestamp_utc: int
     design_capacity_mah: int
     last_full_capacity_mah: int
 
     @classmethod
-    def from_acpi_output(cls, design: str):
+    def from_acpi_output(cls, design: str, timestamp: int):
         pat = r"Battery \d+: design capacity (\d+) mAh, last full capacity (\d+) mAh"
         match = re.match(pat, design)
         if not match:
             raise ValueError(f"Unable to parse battery design info from {design}")
         des, lfc = match.groups()
-        return cls(design_capacity_mah=int(des), last_full_capacity_mah=int(lfc))
+        return cls(
+            timestamp_utc=timestamp,
+            design_capacity_mah=int(des),
+            last_full_capacity_mah=int(lfc),
+        )
 
     @property
     def last_full_capacity_perc(self):
@@ -93,8 +103,8 @@ def read_battery_info() -> tuple[BatteryStatusReading, BatteryDesignInfo]:
     """Reads battery status and design information from acpi and returns
     structured BatteryStatusReading and BatteryDesignInfo objects"""
     cmd_stdout = subprocess.run(["acpi", "-i"], capture_output=True).stdout.decode()
-    print(cmd_stdout)
+    timestamp = int(time.time())
     status_line, design_line, *_ = cmd_stdout.split("\n")
     return BatteryStatusReading.from_acpi_output(
-        status_line
-    ), BatteryDesignInfo.from_acpi_output(design_line)
+        status_line, timestamp
+    ), BatteryDesignInfo.from_acpi_output(design_line, timestamp)
