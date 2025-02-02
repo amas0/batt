@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Literal
 
-from acpi import BatteryStatusReading, BatteryDesignInfo
+from psu import BatteryInfo
 
 
 @dataclass
@@ -39,22 +39,26 @@ class Database:
     STATUS_TABLE = Table(
         "status",
         (
-            Column("timestamp_utc", "INTEGER", True),
-            Column("state", "INTEGER"),
-            Column("percentage", "INTEGER"),
-            Column("minutes_until_discharged", "INTEGER"),
-            Column("minutes_until_charged", "INTEGER"),
+            Column("timestamp_utc", "INTEGER", primary_key=True),
+            Column("status", "INTEGER"),
+            Column("voltage", "INTEGER"),
+            Column("power", "INTEGER"),
+            Column("energy_full", "INTEGER"),
+            Column("energy_now", "INTEGER"),
         ),
     )
-    DESIGN_INFO_TABLE = Table(
-        "design_info",
+    BATTERY_INFO_TABLE = Table(
+        "battery_info",
         (
-            Column("timestamp_utc", "INTEGER", True),
-            Column("design_capacity_mah", "INTEGER"),
-            Column("last_full_capacity_mah", "INTEGER"),
+            Column("id", "INTEGER", primary_key=True),
+            Column("voltage_min_design", "INTEGER"),
+            Column("energy_full_design", "INTEGER"),
+            Column("model_name", "TEXT"),
+            Column("manufacturer", "TEXT"),
+            Column("serial_number", "TEXT"),
         ),
     )
-    TABLES = (STATUS_TABLE, DESIGN_INFO_TABLE)
+    TABLES = (STATUS_TABLE, BATTERY_INFO_TABLE)
 
     def __init__(self, path: Path):
         self.path = path
@@ -73,30 +77,41 @@ class Database:
             for table in Database.TABLES:
                 cur.execute(table.create_statement)
 
-    def insert_battery_status(self, status: BatteryStatusReading):
+    def insert_battery_status(self, info: BatteryInfo, timestamp: int):
         column_names = [col.name for col in self.STATUS_TABLE.columns]
         values = [
-            status.timestamp_utc,
-            status.state.value,
-            status.percentage,
-            status.minutes_until_discharged,
-            status.minutes_until_charged,
+            timestamp,
+            info.status.value,
+            # Convert units order of magnitude from micro- to mili-
+            info.voltage_now // 1000,
+            info.power_now // 1000,
+            info.energy_full // 1000,
+            info.energy_now // 1000,
         ]
         placeholders = ", ".join("?" * len(values))
-        insert_stmt = f"INSERT INTO {self.STATUS_TABLE.name} ({','.join(column_names)}) VALUES ({placeholders})"
+        insert_stmt = (
+            f"INSERT INTO {self.STATUS_TABLE.name} "
+            f"({','.join(column_names)}) VALUES ({placeholders})"
+        )
         with self.cursor() as cursor:
             cursor.execute(insert_stmt, values)
         self.conn.commit()
 
-    def insert_battery_design_info(self, design: BatteryDesignInfo):
-        column_names = [col.name for col in self.DESIGN_INFO_TABLE.columns]
+    def insert_battery_info(self, info: BatteryInfo):
+        column_names = [col.name for col in self.BATTERY_INFO_TABLE.columns]
         values = [
-            design.timestamp_utc,
-            design.design_capacity_mah,
-            design.last_full_capacity_mah,
+            # Convert units order of magnitude from micro- to mili-
+            info.voltage_min_design // 1000,
+            info.energy_full_design // 1000,
+            info.model_name,
+            info.manufacturer,
+            info.serial_number,
         ]
         placeholders = ", ".join("?" * len(values))
-        insert_stmt = f"INSERT INTO {self.DESIGN_INFO_TABLE.name} ({','.join(column_names)}) VALUES ({placeholders})"
+        insert_stmt = (
+            f"INSERT INTO {self.BATTERY_INFO_TABLE.name} "
+            f"({','.join(column_names)}) VALUES ({placeholders})"
+        )
         with self.cursor() as cursor:
             cursor.execute(insert_stmt, values)
         self.conn.commit()
