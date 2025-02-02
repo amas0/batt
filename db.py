@@ -63,6 +63,7 @@ class Database:
     def __init__(self, path: Path):
         self.path = path
         self.conn = sqlite3.connect(self.path)
+        self.initialize_tables()
 
     @contextmanager
     def cursor(self):
