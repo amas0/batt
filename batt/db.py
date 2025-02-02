@@ -1,3 +1,4 @@
+import os
 import sqlite3
 from dataclasses import dataclass
 from contextlib import contextmanager
@@ -5,6 +6,8 @@ from pathlib import Path
 from typing import Literal
 
 from psu import BatteryInfo
+
+BATT_DB_PATH = Path(os.environ.get("BATT_DB_PATH", Path.home() / ".batt.db"))
 
 
 @dataclass
@@ -72,6 +75,10 @@ class Database:
         self.path = path
         self.conn = sqlite3.connect(self.path)
         self.initialize_tables()
+
+    @classmethod
+    def load_default(cls):
+        return cls(BATT_DB_PATH)
 
     @contextmanager
     def cursor(self):
