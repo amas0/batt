@@ -56,6 +56,11 @@ class CapacityLevel(Enum):
 
 @dataclass(frozen=True)
 class BatteryInfo:
+    """Battery information parsed from /sys/class/power_supply/BAT0
+
+    Units for voltage, power, and energy are microvolts, microwatts,
+    and microwatt-hours, respectively"""
+
     name: str
     status: BatteryStatus
     voltage_min_design: int
@@ -72,6 +77,7 @@ class BatteryInfo:
 
 
 def get_current_battery_info():
+    """Parses /sys/class/power_supply/BAT0/uevent for current battery info"""
     bat0_path = Path("/sys/class/power_supply/BAT0/")
     parsed = {}
     with open(bat0_path / "uevent", "r") as f:
