@@ -3,7 +3,7 @@ from pathlib import Path
 from dataclasses import dataclass
 
 
-class BatteryStatus(Enum):
+class LowLevelBatteryStatus(Enum):
     Unknown = 0
     Charging = 1
     Discharging = 2
@@ -62,7 +62,7 @@ class BatteryInfo:
     and microwatt-hours, respectively"""
 
     name: str
-    status: BatteryStatus
+    status: LowLevelBatteryStatus
     voltage_min_design: int
     voltage_now: int
     power_now: int
@@ -90,7 +90,7 @@ def get_current_battery_info():
 
     return BatteryInfo(
         name=parsed["NAME"],
-        status=BatteryStatus.from_value(parsed["STATUS"]),
+        status=LowLevelBatteryStatus.from_value(parsed["STATUS"]),
         voltage_min_design=int(parsed["VOLTAGE_MIN_DESIGN"]),
         voltage_now=int(parsed["VOLTAGE_NOW"]),
         power_now=int(parsed["POWER_NOW"]),
