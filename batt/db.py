@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Literal
 
-from psu import BatteryInfo
+from batt.psu import BatteryInfo
 
 BATT_DB_PATH = Path(os.environ.get("BATT_DB_PATH", Path.home() / ".batt.db"))
 

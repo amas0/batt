@@ -5,7 +5,7 @@ from rich import box
 from rich.text import Text
 from rich.table import Table
 
-import psu
+import batt.psu as psu
 
 
 @dataclass

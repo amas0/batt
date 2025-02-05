@@ -3,9 +3,9 @@ import time
 import typer
 from rich.console import Console
 
-import db
-import psu
-import batt
+import batt.db as db
+import batt.psu as psu
+import batt.batt as batt
 
 app = typer.Typer()
 console = Console()
