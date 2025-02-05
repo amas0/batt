@@ -20,8 +20,15 @@ def save_battery_status():
 
 
 @app.command()
-def status():
-    console.print(batt.BatteryStatus.current().rich)
+def status(
+    table: bool = typer.Option(
+        False, "--table", "-t", help="Print status in table format"
+    ),
+):
+    if table:
+        console.print(batt.BatteryStatus.current().table)
+    else:
+        console.print(batt.BatteryStatus.current().rich)
 
 
 if __name__ == "__main__":
