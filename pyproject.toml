@@ -1,0 +1,9 @@
+[project]
+name = "batt"
+version = "0.1.0"
+description = "Battery monitoring and analysis utility for Linux"
+requires-python = ">=3.12"
+dependencies = []
+
+[project.scripts]
+batt="batt.cli:app"
