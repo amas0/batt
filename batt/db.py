@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Literal
 
 from batt.psu import BatteryInfo
+from batt.system_states import StateTransition
 
 BATT_DB_PATH = Path(os.environ.get("BATT_DB_PATH", Path.home() / ".batt.db"))
 
@@ -69,7 +70,15 @@ class Database:
         ),
         additional_statements=f"FOREIGN KEY(info_id) REFERENCES {BATTERY_INFO_TABLE.name}(id)",
     )
-    TABLES = (BATTERY_INFO_TABLE, STATUS_TABLE)
+    SYSTEM_STATES_TABLE = Table(
+        "system_state",
+        (
+            Column("timestamp", "INTEGER", primary_key=True),
+            Column("initial_state", "INTEGER"),
+            Column("final_state", "INTEGER"),
+        ),
+    )
+    TABLES = (BATTERY_INFO_TABLE, STATUS_TABLE, SYSTEM_STATES_TABLE)
 
     def __init__(self, path: Path):
         self.path = path
@@ -152,6 +161,18 @@ class Database:
         placeholders = ", ".join("?" * len(values))
         insert_stmt = (
             f"INSERT INTO {self.BATTERY_INFO_TABLE.name} "
+            f"({','.join(column_names)}) VALUES ({placeholders})"
+        )
+        with self.cursor() as cursor:
+            cursor.execute(insert_stmt, values)
+        self.conn.commit()
+
+    def insert_state_transition(self, st: StateTransition):
+        column_names = [col.name for col in self.SYSTEM_STATES_TABLE.columns]
+        values = [st.timestamp, st.initial.value, st.final.value]
+        placeholders = ", ".join("?" * len(values))
+        insert_stmt = (
+            f"INSERT INTO {self.SYSTEM_STATES_TABLE.name} "
             f"({','.join(column_names)}) VALUES ({placeholders})"
         )
         with self.cursor() as cursor:
