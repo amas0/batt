@@ -6,7 +6,7 @@ BASE_DIR = Path("/sys/class/backlight/")
 
 
 @dataclass
-class BacklightBrightness:
+class BacklightReading:
     timestamp: int
     brightness_percentage: int
 
@@ -16,7 +16,7 @@ def get_backlight_directories(base_dir: Path = BASE_DIR) -> list[Path]:
     return list(base_dir.iterdir())
 
 
-def get_backlight_reading_from_dir(backlight_dir: Path) -> BacklightBrightness:
+def get_backlight_reading_from_dir(backlight_dir: Path) -> BacklightReading:
     """Given a backlight reading from a backlight dir, e.g.
     /sys/class/backlight/intel_backlight/, return a timestamped
     reading of the backlight percentage
@@ -26,13 +26,13 @@ def get_backlight_reading_from_dir(backlight_dir: Path) -> BacklightBrightness:
     with open(backlight_dir / "max_brightness") as f:
         max_brightness = int(f.read().strip())
 
-    return BacklightBrightness(
+    return BacklightReading(
         timestamp=int(time.time()),
         brightness_percentage=round(100 * actual / max_brightness),
     )
 
 
-def get_backlight_reading(base_dir: Path = BASE_DIR) -> BacklightBrightness:
+def get_backlight_reading(base_dir: Path = BASE_DIR) -> BacklightReading:
     """Get a backlight reading from the first backlight directory found"""
     first, *_ = get_backlight_directories(base_dir)
     return get_backlight_reading_from_dir(first)
