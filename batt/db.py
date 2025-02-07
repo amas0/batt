@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Literal
 
+from batt.backlight import BacklightReading
 from batt.psu import BatteryInfo
 from batt.system_states import StateTransition
 
@@ -78,7 +79,14 @@ class Database:
             Column("final_state", "INTEGER"),
         ),
     )
-    TABLES = (BATTERY_INFO_TABLE, STATUS_TABLE, SYSTEM_STATES_TABLE)
+    BACKLIGHT_TABLE = Table(
+        "backlight",
+        (
+            Column("timestamp", "INTEGER", primary_key=True),
+            Column("backlight_percentage", "INTEGER"),
+        ),
+    )
+    TABLES = (BATTERY_INFO_TABLE, STATUS_TABLE, SYSTEM_STATES_TABLE, BACKLIGHT_TABLE)
 
     def __init__(self, path: Path):
         self.path = path
@@ -173,6 +181,18 @@ class Database:
         placeholders = ", ".join("?" * len(values))
         insert_stmt = (
             f"INSERT INTO {self.SYSTEM_STATES_TABLE.name} "
+            f"({','.join(column_names)}) VALUES ({placeholders})"
+        )
+        with self.cursor() as cursor:
+            cursor.execute(insert_stmt, values)
+        self.conn.commit()
+
+    def insert_backlight_reading(self, br: BacklightReading):
+        column_names = [col.name for col in self.SYSTEM_STATES_TABLE.columns]
+        values = [br.timestamp, br.brightness_percentage]
+        placeholders = ", ".join("?" * len(values))
+        insert_stmt = (
+            f"INSERT INTO {self.BACKLIGHT_TABLE.name} "
             f"({','.join(column_names)}) VALUES ({placeholders})"
         )
         with self.cursor() as cursor:
