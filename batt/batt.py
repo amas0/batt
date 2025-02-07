@@ -98,13 +98,16 @@ class BatteryStatus:
             h = int(hrs_float)
             m = int(60 * (hrs_float - h))
             time = f"{h}:{m:02}"
+            target_status = "fully charge"
         elif self.status == "Discharging":
             hrs_float = self.energy_now / self.power_now
             h = int(hrs_float)
             m = int(60 * (hrs_float - h))
             time = f"{h}:{m:02}"
+            target_status = "empty"
         else:
             time = ""
+            target_status = ""
 
         status_text = Text(
             self.status.lower(), style=status_color.get(self.status, "default")
@@ -116,7 +119,7 @@ class BatteryStatus:
             + status_text
             + Text(" at ")
             + power_text
-            + Text(" and estimated to empty in ")
+            + Text(f" and estimated to {target_status} in ")
             + time_text
         )
 
