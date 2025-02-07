@@ -61,7 +61,7 @@ class Database:
     STATUS_TABLE = Table(
         "status",
         (
-            Column("timestamp_utc", "INTEGER", primary_key=True),
+            Column("timestamp", "INTEGER", primary_key=True),
             Column("info_id", "INTEGER"),
             Column("status", "INTEGER"),
             Column("voltage", "INTEGER"),
