@@ -198,3 +198,13 @@ class Database:
         with self.cursor() as cursor:
             cursor.execute(insert_stmt, values)
         self.conn.commit()
+
+    def most_recent_system_state(self) -> StateTransition | None:
+        query = f"SELECT * FROM {self.SYSTEM_STATES_TABLE.name} ORDER BY timestamp desc"
+        with self.cursor() as cursor:
+            cursor.execute(query)
+            res = cursor.fetchone()
+            if res:
+                return StateTransition.from_values(*res)
+
+        return res

@@ -18,6 +18,14 @@ class StateTransition:
     initial: SystemState
     final: SystemState
 
+    @classmethod
+    def from_values(cls, ts: int, init: int, final: int):
+        """Instantiates a StateTransition object from the values of timestamp,
+        initial state, and final state"""
+        init_enum = SystemState(init)
+        final_enum = SystemState(final)
+        return cls(ts, init_enum, final_enum)
+
 
 def get_recent_suspend_transitions(since: datetime) -> list[StateTransition]:
     """Extract transitions between sleep and wake from journalctl events"""
