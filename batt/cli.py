@@ -8,10 +8,17 @@ import batt.db as db
 import batt.psu as psu
 import batt.batt as batt
 import batt.system_states as system_states
+import batt.backlight as backlight
 
 app = typer.Typer()
 console = Console()
 database = db.Database.load_default()
+
+
+@app.command()
+def save_backlight_state():
+    reading = backlight.get_backlight_reading()
+    database.insert_backlight_reading(reading)
 
 
 @app.command()
