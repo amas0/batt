@@ -1,5 +1,5 @@
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import typer
 from rich.console import Console
@@ -37,6 +37,30 @@ def save_recent_state_transitions(
     recent_st = system_states.get_recent_system_state_transitions(since)
     for st in recent_st:
         database.insert_state_transition(st)
+
+
+@app.command()
+def update_all():
+    last_system_state_transition = database.most_recent_system_state()
+    if last_system_state_transition is None:
+        since = datetime.now() - timedelta(days=90)
+    else:
+        since = datetime.fromtimestamp(last_system_state_transition.timestamp)
+
+    save_battery_status()
+    save_recent_state_transitions(since)
+    save_backlight_state()
+
+
+@app.command()
+def updater(
+    interval: int = typer.Option(
+        60, "--interval", "-i", help="Update interval (in seconds)"
+    ),
+):
+    while True:
+        update_all()
+        time.sleep(interval)
 
 
 @app.command()
