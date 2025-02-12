@@ -188,7 +188,7 @@ class Database:
         self.conn.commit()
 
     def insert_backlight_reading(self, br: BacklightReading):
-        column_names = [col.name for col in self.SYSTEM_STATES_TABLE.columns]
+        column_names = [col.name for col in self.BACKLIGHT_TABLE.columns]
         values = [br.timestamp, br.brightness_percentage]
         placeholders = ", ".join("?" * len(values))
         insert_stmt = (
