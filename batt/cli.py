@@ -45,7 +45,7 @@ def update_all():
     if last_system_state_transition is None:
         since = datetime.now() - timedelta(days=90)
     else:
-        since = datetime.fromtimestamp(last_system_state_transition.timestamp)
+        since = datetime.fromtimestamp(last_system_state_transition.timestamp + 1)
 
     save_battery_status()
     save_recent_state_transitions(since)
