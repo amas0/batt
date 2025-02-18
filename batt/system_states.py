@@ -30,8 +30,6 @@ class StateTransition:
 def get_recent_suspend_transitions(since: datetime) -> list[StateTransition]:
     """Extract transitions between sleep and wake from journalctl events"""
 
-    # TODO: Figure out hibernate
-
     def parse_out_dt(line: str) -> datetime:
         return datetime.fromtimestamp(float(line.split()[0]))
 
@@ -57,6 +55,42 @@ def get_recent_suspend_transitions(since: datetime) -> list[StateTransition]:
             dt = parse_out_dt(line)
             transitions.append(
                 StateTransition(int(dt.timestamp()), SystemState.SLEEP, SystemState.ON)
+            )
+    return transitions
+
+
+def get_recent_hibernate_transitions(since: datetime) -> list[StateTransition]:
+    """Extract hibernate transitions from journalctl events"""
+
+    def parse_out_dt(line: str) -> datetime:
+        return datetime.fromtimestamp(float(line.split()[0]))
+
+    command = [
+        "journalctl",
+        "-S",
+        f"{since.isoformat()}",
+        "-o",
+        "short-unix",
+        "-g",
+        "sleep operation 'hibernate",
+    ]
+    out = subprocess.run(command, capture_output=True)
+    lines = out.stdout.decode().split("\n")
+    transitions = []
+    for line in lines:
+        if "Performing sleep operation" in line:
+            dt = parse_out_dt(line)
+            transitions.append(
+                StateTransition(
+                    int(dt.timestamp()), SystemState.ON, SystemState.HIBERNATE
+                )
+            )
+        elif "System returned from" in line:
+            dt = parse_out_dt(line)
+            transitions.append(
+                StateTransition(
+                    int(dt.timestamp()), SystemState.HIBERNATE, SystemState.ON
+                )
             )
     return transitions
 
@@ -104,4 +138,5 @@ def get_recent_boot_and_shutdown_transitions(since: datetime) -> list[StateTrans
 def get_recent_system_state_transitions(since: datetime) -> list[StateTransition]:
     sleeps = get_recent_suspend_transitions(since)
     boots = get_recent_boot_and_shutdown_transitions(since)
-    return sleeps + boots
+    hibernates = get_recent_hibernate_transitions(since)
+    return sleeps + boots + hibernates
