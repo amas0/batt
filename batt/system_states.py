@@ -74,12 +74,23 @@ def get_recent_boot_and_shutdown_transitions(since: datetime) -> list[StateTrans
     out = subprocess.run(command, capture_output=True)
     boot_records = (l.strip() for l in out.stdout.decode().split("\n")[1:] if l.strip())
 
-    return [
-        st
-        for rec in boot_records
-        for st in parse_transitions(rec)
-        if st.timestamp >= since.timestamp()
-    ]
+    transitions = sorted(
+        [
+            st
+            for rec in boot_records
+            for st in parse_transitions(rec)
+            if st.timestamp >= since.timestamp()
+        ],
+        key=lambda tr: tr.timestamp,
+    )
+    # Check to remove the most recent entry as it is likely the current
+    # ongoing boot session, otherwise we erroneously report the system
+    # as being turned off when the sesion is ongoing
+    if (transitions[-1].final == SystemState.OFF) and (
+        transitions[-1].initial == SystemState.ON
+    ):
+        transitions = transitions[:-1]
+    return transitions
 
 
 def get_recent_system_state_transitions(since: datetime) -> list[StateTransition]:
