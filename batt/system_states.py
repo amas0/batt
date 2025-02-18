@@ -33,9 +33,17 @@ def get_recent_suspend_transitions(since: datetime) -> list[StateTransition]:
     # TODO: Figure out hibernate
 
     def parse_out_dt(line: str) -> datetime:
-        return parser.parse(" ".join(line.split()[:3]))
+        return datetime.fromtimestamp(float(line.split()[0]))
 
-    command = ["journalctl", "-S", f"{since.isoformat()}", "-g", "suspend e"]
+    command = [
+        "journalctl",
+        "-S",
+        f"{since.isoformat()}",
+        "-o",
+        "short-unix",
+        "-g",
+        "suspend e",
+    ]
     out = subprocess.run(command, capture_output=True)
     lines = out.stdout.decode().split("\n")
     transitions = []
