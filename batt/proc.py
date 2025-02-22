@@ -1,15 +1,22 @@
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
 
 @dataclass
 class ProcessStat:
+    timestamp: int
     pid: int
+    ppid: int
     command: str
     utime: int
     stime: int
     cutime: int
     cstime: int
+
+    @property
+    def total(self) -> int:
+        return self.utime + self.stime + self.cutime + self.cstime
 
 
 def get_proc_pid_stat_files():
@@ -22,8 +29,16 @@ def get_proc_pid_stat_files():
     return stat_files
 
 
-def parse_pid_stat_file(file: Path) -> ProcessStat:
+def parse_pid_stat_file(file: Path, timestamp: int) -> ProcessStat:
     with open(file, "r") as f:
         fields = f.read().strip().split()
     name = fields[1].strip("()")
-    return ProcessStat(int(fields[0]), name, *map(int, fields[13:17]))
+    ppid = int(fields[3])
+    return ProcessStat(timestamp, int(fields[0]), ppid, name, *map(int, fields[13:17]))
+
+
+def get_all_proc_stats() -> list[ProcessStat]:
+    files = get_proc_pid_stat_files()
+    ts = int(time.time())
+    all_proc_stats = [parse_pid_stat_file(file, ts) for file in files]
+    return all_proc_stats

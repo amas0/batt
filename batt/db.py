@@ -8,6 +8,7 @@ from typing import Literal
 from batt.backlight import BacklightReading
 from batt.psu import BatteryInfo
 from batt.system_states import StateTransition
+from batt.proc import ProcessStat
 
 BATT_DB_PATH = Path(os.environ.get("BATT_DB_PATH", Path.home() / ".batt.db"))
 
@@ -86,7 +87,26 @@ class Database:
             Column("backlight_percentage", "INTEGER"),
         ),
     )
-    TABLES = (BATTERY_INFO_TABLE, STATUS_TABLE, SYSTEM_STATES_TABLE, BACKLIGHT_TABLE)
+    PROC_STATUS_TABLE = Table(
+        "proc_status",
+        (
+            Column("timestamp", "INTEGER"),
+            Column("pid", "INTEGER"),
+            Column("ppid", "INTEGER"),
+            Column("name", "TEXT"),
+            Column("utime", "INTEGER"),
+            Column("stime", "INTEGER"),
+            Column("cutime", "INTEGER"),
+            Column("cstime", "INTEGER"),
+        ),
+    )
+    TABLES = (
+        BATTERY_INFO_TABLE,
+        STATUS_TABLE,
+        SYSTEM_STATES_TABLE,
+        BACKLIGHT_TABLE,
+        PROC_STATUS_TABLE,
+    )
 
     def __init__(self, path: Path):
         self.path = path
@@ -208,3 +228,24 @@ class Database:
                 return StateTransition.from_values(*res)
 
         return res
+
+    def insert_process_stat(self, proc: ProcessStat):
+        column_names = [col.name for col in self.PROC_STATUS_TABLE.columns]
+        values = [
+            proc.timestamp,
+            proc.pid,
+            proc.ppid,
+            proc.command,
+            proc.utime,
+            proc.stime,
+            proc.cutime,
+            proc.cstime,
+        ]
+        placeholders = ", ".join("?" * len(values))
+        insert_stmt = (
+            f"INSERT INTO {self.PROC_STATUS_TABLE.name} "
+            f"({','.join(column_names)}) VALUES ({placeholders})"
+        )
+        with self.cursor() as cursor:
+            cursor.execute(insert_stmt, values)
+        self.conn.commit()
