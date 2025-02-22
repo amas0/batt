@@ -6,6 +6,7 @@ from rich.console import Console
 
 import batt.db as db
 import batt.psu as psu
+import batt.proc as proc
 import batt.batt as batt
 import batt.system_states as system_states
 import batt.backlight as backlight
@@ -40,6 +41,13 @@ def save_recent_state_transitions(
 
 
 @app.command()
+def save_proc_status():
+    all_proc_stats = proc.get_all_proc_stats()
+    for ps in all_proc_stats:
+        database.insert_process_stat(ps)
+
+
+@app.command()
 def update_all():
     last_system_state_transition = database.most_recent_system_state()
     if last_system_state_transition is None:
@@ -50,6 +58,7 @@ def update_all():
     save_battery_status()
     save_recent_state_transitions(since)
     save_backlight_state()
+    save_proc_status()
 
 
 @app.command()
