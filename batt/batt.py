@@ -126,3 +126,8 @@ class BatteryStatus:
         )
 
         return out
+
+    @property
+    def csv(self) -> str:
+        vals = [self.status, self.power_now, self.energy_now, self.energy_full]
+        return ",".join(map(str, vals))

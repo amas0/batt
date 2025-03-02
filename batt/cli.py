@@ -77,8 +77,27 @@ def status(
     table: bool = typer.Option(
         False, "--table", "-t", help="Print status in table format"
     ),
+    csv: bool = typer.Option(
+        False,
+        "--csv",
+        "-c",
+        help=(
+            "Print battery status in CSV format. Output is charging "
+            "status, power (mW), current energy (mWh), full energy (mWh)"
+        ),
+    ),
+    timestamp: bool = typer.Option(
+        False, "--timestamp", help="Prepend UNIX timestmap in CSV output"
+    ),
 ):
-    if table:
+    if csv:
+        csv_vals = batt.BatteryStatus.current().csv
+        if timestamp:
+            ts = int(time.time())
+            console.print(f"{ts},{csv_vals}")
+        else:
+            console.print(csv_vals)
+    elif table:
         console.print(batt.BatteryStatus.current().table)
     else:
         console.print(batt.BatteryStatus.current().rich)
