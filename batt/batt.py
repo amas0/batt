@@ -82,6 +82,8 @@ class BatteryStatus:
             table.add_row("Time until empty", time)
         else:
             time = ""
+        table.add_row("Current energy", f"{self.energy_now}mWh")
+        table.add_row("Full energy", f"{self.energy_full}mWh")
 
         return table
 
