@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 
 import typer
 from rich.console import Console
+from rich.text import Text
 
 import batt.db as db
 import batt.psu as psu
@@ -101,6 +102,19 @@ def status(
         console.print(batt.BatteryStatus.current().table)
     else:
         console.print(batt.BatteryStatus.current().rich)
+
+
+@app.command()
+def true_power():
+    alpha = 0.1365
+    first = batt.BatteryStatus.current().power_now
+    time.sleep(10)
+    second = batt.BatteryStatus.current().power_now
+    true_power_estimate = (second - (1 - alpha) * first) / alpha
+    true_watts = true_power_estimate / 1000
+    sign = "+" if batt.BatteryStatus.current().status == "Charging" else "-"
+    est = f"{sign}{true_watts:.01f}W"
+    console.print(Text(f"True power estimate: {est}"))
 
 
 if __name__ == "__main__":
