@@ -103,6 +103,3 @@ def get_current_battery_info():
         manufacturer=parsed["MANUFACTURER"],
         serial_number=parsed["SERIAL_NUMBER"],
     )
-
-
-get_current_battery_info()
