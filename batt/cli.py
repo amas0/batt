@@ -106,11 +106,10 @@ def status(
 
 @app.command()
 def true_power():
-    alpha = 0.1365
     first = batt.BatteryStatus.current().power_now
     time.sleep(10)
     second = batt.BatteryStatus.current().power_now
-    true_power_estimate = (second - (1 - alpha) * first) / alpha
+    true_power_estimate = psu.desmooth_power_reading(second, first)
     true_watts = true_power_estimate / 1000
     sign = "+" if batt.BatteryStatus.current().status == "Charging" else "-"
     est = f"{sign}{true_watts:.01f}W"
