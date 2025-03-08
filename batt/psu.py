@@ -103,3 +103,20 @@ def get_current_battery_info():
         manufacturer=parsed["MANUFACTURER"],
         serial_number=parsed["SERIAL_NUMBER"],
     )
+
+
+def desmooth_power_reading(current: int, prior: int, alpha: float = 0.1365):
+    """Experiments on my laptop have shown that the power readings as reported
+    by the battery are exponentially smoothed. For a given smoothing parameter
+    alpha, and a reading x[t] at time t, the smoothed value S[t] is given
+    by:
+
+    S[t] = alpha * x[t] + (1 - alpha) * S[t-1]
+
+    Then by sequential readings of the smoothed value (and an estimate of
+    the smoothing parameter, we can recover the "true" reading x[t].
+
+    This function does so and uses a default smoothing value based on
+    experiments.
+    """
+    return (current - (1 - alpha) * prior) / alpha
