@@ -31,10 +31,14 @@ def get_proc_pid_stat_files():
 
 def parse_pid_stat_file(file: Path, timestamp: int) -> ProcessStat:
     with open(file, "r") as f:
-        fields = f.read().strip().split()
-    name = fields[1].strip("()")
-    ppid = int(fields[3])
-    return ProcessStat(timestamp, int(fields[0]), ppid, name, *map(int, fields[13:17]))
+        fields_str = f.read().strip()
+    name_start, name_end = fields_str.find(" (") + 1, fields_str.find(") ") + 1
+    name = fields_str[name_start:name_end].strip("()")
+    other_fields = fields_str.replace(name, "").split()
+    ppid = int(other_fields[3])
+    return ProcessStat(
+        timestamp, int(other_fields[0]), ppid, name, *map(int, other_fields[13:17])
+    )
 
 
 def get_all_proc_stats() -> list[ProcessStat]:
